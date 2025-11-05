@@ -7,7 +7,7 @@ let allArticles = [];
 let allResults = []; 
 let failedArticlesForDownload = [];
 let currentArticleIndex = 0; 
-let originalFileNameBase = ''; // MỚI: Tên tệp gốc (không có .csv)
+let originalFileNameBase = ''; 
 // ======================================
 
 // Lấy các đối tượng DOM
@@ -21,6 +21,9 @@ const progressBar = document.getElementById('progressBar');
 const statusSummary = document.getElementById('status-summary');
 const successCountSpan = document.getElementById('successCount');
 const failedCountSpan = document.getElementById('failedCount');
+
+// MỚI: Thêm nút tải kết quả chính
+const downloadResultsButton = document.getElementById('downloadResultsButton');
 const downloadErrorsButton = document.getElementById('downloadErrorsButton');
 const batchResultsContainer = document.getElementById('batch-results-container');
 const batchResultsHead = document.getElementById('batch-results-head');
@@ -30,7 +33,25 @@ const batchResultsBody = document.getElementById('batch-results-body');
 startButton.addEventListener('click', handleStartResume);
 pauseButton.addEventListener('click', handlePause);
 stopButton.addEventListener('click', handleStop);
+
+// MỚI: Thêm sự kiện click cho nút tải kết quả
+downloadResultsButton.addEventListener('click', handleDownloadResults);
 downloadErrorsButton.addEventListener('click', handleDownloadErrors);
+
+/**
+ * MỚI: Hàm xử lý tải về tệp CSV kết quả chính
+ */
+function handleDownloadResults() {
+    if (allResults.length === 0) {
+        alert("Không có kết quả nào để tải về.");
+        return;
+    }
+    updateStatus(`Đang tạo tệp CSV cho ${allResults.length} kết quả...`);
+    
+    // Sử dụng tên tệp động
+    const resultsFilename = `${originalFileNameBase}_results_partial.csv`;
+    generateOutputCSV(allResults, resultsFilename);
+}
 
 /**
  * Xử lý khi nhấn nút "Bắt đầu" hoặc "Tiếp tục"
@@ -149,7 +170,7 @@ async function startNewProcess() {
     const csvFile = csvFileInput.files[0];
 
     // 2. Kiểm tra đầu vào
-    if (!csvFile) { // THAY ĐỔI: Kiểm tra file trước
+    if (!csvFile) { 
         alert('Vui lòng chọn tệp CSV.');
         return;
     }
@@ -163,6 +184,7 @@ async function startNewProcess() {
     updateButtonUI('running');
     statusSummary.classList.add('hidden');
     downloadErrorsButton.classList.add('hidden');
+    downloadResultsButton.classList.add('hidden'); // MỚI: Ẩn nút tải kết quả
     clearBatchResults(); 
     progressBar.value = 0;
 
@@ -172,9 +194,8 @@ async function startNewProcess() {
     failedArticlesForDownload = [];
     currentArticleIndex = 0;
     
-    // MỚI: Lấy và lưu tên tệp gốc
+    // Lấy và lưu tên tệp gốc
     const originalFileName = csvFile.name;
-    // Xóa đuôi .csv (không phân biệt hoa thường)
     originalFileNameBase = originalFileName.replace(/\.csv$/i, ''); 
     
     try {
@@ -199,7 +220,7 @@ async function startNewProcess() {
     } finally {
         // 7. Hoàn tất
         processingState = 'stopped';
-        generateFinalReport(); 
+        generateFinalReport(); // THAY ĐỔI: Hàm này giờ chỉ hiển thị báo cáo
         disableSettings(false); 
         updateButtonUI('stopped');
     }
@@ -278,18 +299,16 @@ async function processBatches(apiKey, modelName, delayTimeMs) {
 }
 
 /**
- * Tạo báo cáo cuối cùng
+ * THAY ĐỔI: Hàm này giờ chỉ tạo báo cáo tóm tắt và hiển thị các nút tải
  */
 function generateFinalReport() {
     if (allResults.length === 0 && failedArticlesForDownload.length === 0) {
         updateStatus("Đã dừng trước khi xử lý. Không có kết quả để xuất.");
         return;
     }
-
-    // THAY ĐỔI: Sử dụng tên tệp động
-    const resultsFilename = `${originalFileNameBase}_results_partial.csv`;
-    generateOutputCSV(allResults, resultsFilename);
-
+    
+    // THAY ĐỔI: Đã XÓA lệnh gọi generateOutputCSV() tự động
+    
     const failedCount = failedArticlesForDownload.length;
     const successCount = allResults.length - failedCount;
     
@@ -299,13 +318,20 @@ function generateFinalReport() {
 
     let finalMessage = `Hoàn thành! Thành công: ${successCount}, Thất bại: ${failedCount}.`;
     
+    // MỚI: Hiển thị nút tải kết quả chính nếu có kết quả
+    if (allResults.length > 0) {
+        downloadResultsButton.classList.remove('hidden');
+        finalMessage += " Bạn có thể tải về tệp kết quả.";
+    }
+
+    // Hiển thị nút tải lỗi nếu có lỗi
     if (failedCount > 0) {
         downloadErrorsButton.classList.remove('hidden');
         finalMessage += " Bạn có thể tải về danh sách bài lỗi.";
     }
     
     if (processingState === 'stopped' && currentArticleIndex < allArticles.length - 1) {
-         finalMessage = `Đã dừng. Xuất ${allResults.length} kết quả đã xử lý. (Thành công: ${successCount}, Thất bại: ${failedCount})`;
+         finalMessage = `Đã dừng. ${allResults.length} kết quả đã xử lý. (Thành công: ${successCount}, Thất bại: ${failedCount})`;
     }
     
     updateStatus(finalMessage);
@@ -351,7 +377,6 @@ function handleDownloadErrors() {
     }
     updateStatus(`Đang tạo tệp CSV cho ${failedArticlesForDownload.length} bài báo lỗi...`);
     
-    // THAY ĐỔI: Sử dụng tên tệp động
     const errorFilename = `${originalFileNameBase}_failed_retry.csv`;
     generateOutputCSV(failedArticlesForDownload, errorFilename);
 }
@@ -403,7 +428,7 @@ function buildPrompt(article) {
     6.  **resolution**: (string) Độ phân giải của dữ liệu nếu được đề cập. Nếu không, điền "N/A". Ví dụ: "30m", "10m", "N/A".
     7.  **time_frame**: (string) Khoảng thời gian của dữ liệu nếu được đề cập. Nếu không, điền "N/A". Ví dụ: "2010-2020", "N/A".
     
-    Chỉ trả về đối tượng JSON theo định dạng sau:
+    Chỉ trả về đối tượng JSON chứa nội dung bằng tiếng Anh (English) theo định dạng sau:
     {
       "input_data": "...",
       "mechanism": "...",
