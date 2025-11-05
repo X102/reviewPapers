@@ -286,3 +286,27 @@ progress::-webkit-progress-value {
     min-width: 200px; /* <-- MỚI: Đặt độ rộng tối thiểu */
     /* Trình duyệt sẽ tự động co giãn các cột khác */
 }
+/* MỚI: Style cho nút tải kết quả chính (màu xanh) */
+#downloadResultsButton {
+    margin-top: 15px; /* Khoảng cách với thanh trạng thái */
+    background-color: #007bff; /* Màu xanh */
+    width: 100%;
+    padding: 12px;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 16px;
+    font-weight: bold;
+    transition: background-color 0.3s ease;
+}
+#downloadResultsButton:hover {
+    background-color: #0056b3;
+}
+
+/* THAY ĐỔI: Giảm margin-top của nút lỗi 
+   để nó nằm ngay dưới nút kết quả
+*/
+#downloadErrorsButton {
+    margin-top: 10px; 
+}
