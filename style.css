@@ -1,11 +1,12 @@
+
 body {
     font-family: Arial, sans-serif;
     background-color: #f4f7f6;
     margin: 0;
-    padding: 20px;
+    padding: 0; /* <-- THAY ĐỔI: Bỏ padding mặc định của body */
     display: flex;
     justify-content: center;
-    align-items: center;
+    align-items: flex-start; /* <-- THAY ĐỔI: Căn lề trên cùng thay vì giữa */
     min-height: 100vh;
 }
 
@@ -14,10 +15,18 @@ body {
     padding: 30px;
     border-radius: 10px;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
-    width: 100%;
-    max-width: 600px;
+    
+    /* --- THAY ĐỔI CHÍNH --- */
+    width: 95%; /* <-- THAY ĐỔI: Chiếm 95% chiều rộng màn hình */
+    max-width: 1800px; /* <-- THAY ĐỔI: Giới hạn tối đa (trên màn hình siêu rộng) */
+    /* Dòng 'max-width: 600px;' cũ đã bị xóa */
+    
+    box-sizing: border-box; /* Đảm bảo padding không làm vỡ layout */
+    margin-top: 20px; /* <-- THÊM: Tạo khoảng cách với lề trên */
+    margin-bottom: 20px; /* <-- THÊM: Tạo khoảng cách với lề dưới */
 }
 
+/* ... (toàn bộ phần còn lại của style.css giữ nguyên) ... */
 h1 {
     color: #333;
     text-align: center;
@@ -202,4 +211,78 @@ progress::-webkit-progress-value {
 #settings-fieldset:disabled {
     opacity: 0.7;
     pointer-events: none;
+}
+/* ... (Tất cả các style cũ giữ nguyên) ... */
+
+/* MỚI: Kiểu cho hiển thị batch */
+#batch-results-container {
+    margin-top: 20px;
+}
+#batch-results-container h3 {
+    margin: 0 0 10px 0;
+    font-size: 16px;
+    color: #333;
+}
+/* MỚI: Thêm container cuộn cho bảng */
+.table-wrapper {
+    max-height: 300px; /* Giới hạn chiều cao, cho phép cuộn */
+    overflow-y: auto;   /* Chỉ cuộn dọc */
+    overflow-x: auto;   /* Cuộn ngang nếu cần */
+    border: 1px solid #ddd;
+    border-radius: 5px;
+}
+#batch-results-table {
+    width: 100%;
+    border-collapse: collapse; /* Bỏ đường viền kép */
+    font-size: 12px; /* Chữ nhỏ hơn cho gọn */
+}
+#batch-results-table th, 
+#batch-results-table td {
+    border: 1px solid #ddd;
+    padding: 6px 8px;
+    text-align: left;
+    word-break: break-word; /* Ngăn từ quá dài làm vỡ layout */
+    vertical-align: top;
+}
+/* MỚI: Giữ header cố định khi cuộn */
+#batch-results-table th {
+    background-color: #f4f4f4;
+    position: sticky; /* Giữ header */
+    top: 0;
+    z-index: 1;
+}
+/* MỚI: Style cho hàng lỗi trong bảng tạm */
+#batch-results-body tr.error-row td {
+    background-color: #fff2f2; /* Màu hồng nhạt */
+    color: #c82333; /* Màu đỏ */
+    font-weight: bold;
+}
+/* ... (Tất cả các style cũ giữ nguyên) ... */
+
+/* THAY ĐỔI: Tăng chiều cao tối đa của bảng */
+.table-wrapper {
+    max-height: 500px; /* <-- THAY ĐỔI: Tăng từ 300px lên 500px (hoặc tùy ý bạn) */
+    overflow-y: auto;   
+    overflow-x: auto;   
+    border: 1px solid #ddd;
+    border-radius: 5px;
+}
+
+#batch-results-table th, 
+#batch-results-table td {
+    border: 1px solid #ddd;
+    padding: 6px 8px;
+    text-align: left;
+    word-break: break-word;
+    vertical-align: top;
+    white-space: normal; /* <-- THÊM: Đảm bảo văn bản luôn xuống dòng */
+}
+
+/* ... (style .error-row giữ nguyên) ... */
+
+/* MỚI: Thêm style để kiểm soát cột Abstract */
+.abstract-col {
+    max-width: 350px; /* <-- MỚI: Giới hạn độ rộng tối đa của cột Abstract */
+    min-width: 200px; /* <-- MỚI: Đặt độ rộng tối thiểu */
+    /* Trình duyệt sẽ tự động co giãn các cột khác */
 }
