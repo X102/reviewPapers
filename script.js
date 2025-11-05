@@ -1,19 +1,20 @@
 // Thiết lập các hằng số
 const BATCH_SIZE = 5;
 
-// === MỚI: Biến trạng thái toàn cục ===
+// === Biến trạng thái toàn cục ===
 let processingState = 'stopped'; // 'running', 'paused', 'stopped'
-let allArticles = []; // Toàn bộ danh sách bài báo đã parse
-let allResults = []; // Tích lũy TẤT CẢ kết quả (thành công + lỗi)
-let failedArticlesForDownload = []; // Tích lũy bài báo GỐC bị lỗi
-let currentArticleIndex = 0; // Vị trí để tiếp tục
+let allArticles = []; 
+let allResults = []; 
+let failedArticlesForDownload = [];
+let currentArticleIndex = 0; 
+let originalFileNameBase = ''; // MỚI: Tên tệp gốc (không có .csv)
 // ======================================
 
 // Lấy các đối tượng DOM
 const startButton = document.getElementById('startButton');
 const pauseButton = document.getElementById('pauseButton');
 const stopButton = document.getElementById('stopButton');
-const settingsFieldset = document.getElementById('settings-fieldset'); // MỚI
+const settingsFieldset = document.getElementById('settings-fieldset');
 const csvFileInput = document.getElementById('csvFile');
 const statusText = document.querySelector('#status p');
 const progressBar = document.getElementById('progressBar');
@@ -21,6 +22,9 @@ const statusSummary = document.getElementById('status-summary');
 const successCountSpan = document.getElementById('successCount');
 const failedCountSpan = document.getElementById('failedCount');
 const downloadErrorsButton = document.getElementById('downloadErrorsButton');
+const batchResultsContainer = document.getElementById('batch-results-container');
+const batchResultsHead = document.getElementById('batch-results-head');
+const batchResultsBody = document.getElementById('batch-results-body');
 
 // Gắn sự kiện click
 startButton.addEventListener('click', handleStartResume);
@@ -33,14 +37,11 @@ downloadErrorsButton.addEventListener('click', handleDownloadErrors);
  */
 function handleStartResume() {
     if (processingState === 'stopped') {
-        // Bắt đầu một quy trình MỚI
         startNewProcess();
     } else if (processingState === 'paused') {
-        // Tiếp tục quy trình
         processingState = 'running';
         updateButtonUI('running');
         updateStatus('Đang tiếp tục xử lý...');
-        // Vòng lặp trong processBatches sẽ tự động tiếp tục
     }
 }
 
@@ -62,12 +63,82 @@ function handleStop() {
         processingState = 'stopped';
         updateButtonUI('stopped');
         updateStatus('Đã nhận lệnh dừng... Sẽ hoàn tất batch hiện tại (nếu có) và xuất file.');
-        // Vòng lặp trong processBatches sẽ dừng lại và hàm startNewProcess sẽ đi đến 'finally'
     }
 }
 
 /**
- * MỚI: Hàm chính bắt đầu một quy trình MỚI
+ * Xóa/ẩn bảng kết quả batch
+ */
+function clearBatchResults() {
+    batchResultsContainer.classList.add('hidden');
+    batchResultsHead.innerHTML = ''; 
+    batchResultsBody.innerHTML = '';
+}
+
+/**
+ * Hiển thị kết quả của một batch (Đã tối ưu hóa)
+ */
+function displayBatchResults(batchData) {
+    if (!batchData || batchData.length === 0) return;
+
+    // 1. Xóa nội dung cũ
+    batchResultsHead.innerHTML = '';
+    batchResultsBody.innerHTML = '';
+
+    // Chỉ định các cột chúng ta muốn hiển thị
+    const headersToShow = [
+        'Title', 
+        'Abstract', 
+        'Input_Data', 
+        'Mechanism', 
+        'Output_Result', 
+        'Accuracy', 
+        'Num_Classes', 
+        'Resolution'
+    ];
+
+    // 2. Tạo Header (dựa trên danh sách headersToShow)
+    const headerRow = document.createElement('tr');
+    headersToShow.forEach(header => {
+        if (batchData[0].hasOwnProperty(header)) {
+            const th = document.createElement('th');
+            th.textContent = header;
+            if (header === 'Abstract') {
+                th.classList.add('abstract-col');
+            }
+            headerRow.appendChild(th);
+        }
+    });
+    batchResultsHead.appendChild(headerRow);
+
+    // 3. Tạo Body
+    batchData.forEach(article => {
+        const row = document.createElement('tr');
+        
+        if (article.Mechanism === 'LỖI' || (article.Input_Data && article.Input_Data.startsWith('LỖI:'))) {
+            row.classList.add('error-row');
+        }
+
+        headersToShow.forEach(header => {
+            if (batchData[0].hasOwnProperty(header)) {
+                const td = document.createElement('td');
+                td.textContent = article[header] || '';
+                if (header === 'Abstract') {
+                    td.classList.add('abstract-col');
+                }
+                row.appendChild(td);
+            }
+        });
+        batchResultsBody.appendChild(row);
+    });
+
+    // 4. Hiển thị container
+    batchResultsContainer.classList.remove('hidden');
+}
+
+
+/**
+ * Hàm chính bắt đầu một quy trình MỚI
  */
 async function startNewProcess() {
     // 1. Lấy cài đặt
@@ -78,16 +149,21 @@ async function startNewProcess() {
     const csvFile = csvFileInput.files[0];
 
     // 2. Kiểm tra đầu vào
-    if (!apiKey || !modelName || !csvFile || !delayTimeS) {
-        alert('Vui lòng điền đầy đủ API Key, Tên Model, Thời gian nghỉ và chọn tệp CSV.');
+    if (!csvFile) { // THAY ĐỔI: Kiểm tra file trước
+        alert('Vui lòng chọn tệp CSV.');
+        return;
+    }
+    if (!apiKey || !modelName || !delayTimeS) {
+        alert('Vui lòng điền đầy đủ API Key, Tên Model và Thời gian nghỉ.');
         return;
     }
 
     // 3. Đặt lại trạng thái và UI
-    disableSettings(true); // Vô hiệu hóa các ô cài đặt
-    updateButtonUI('running'); // Hiển thị nút Tạm dừng/Dừng
+    disableSettings(true); 
+    updateButtonUI('running');
     statusSummary.classList.add('hidden');
     downloadErrorsButton.classList.add('hidden');
+    clearBatchResults(); 
     progressBar.value = 0;
 
     // 4. Đặt lại các biến toàn cục
@@ -95,6 +171,11 @@ async function startNewProcess() {
     allResults = [];
     failedArticlesForDownload = [];
     currentArticleIndex = 0;
+    
+    // MỚI: Lấy và lưu tên tệp gốc
+    const originalFileName = csvFile.name;
+    // Xóa đuôi .csv (không phân biệt hoa thường)
+    originalFileNameBase = originalFileName.replace(/\.csv$/i, ''); 
     
     try {
         // 5. Parse CSV
@@ -116,34 +197,30 @@ async function startNewProcess() {
         console.error('Lỗi nghiêm trọng:', error);
         updateStatus(`Lỗi: ${error.message}`);
     } finally {
-        // 7. Hoàn tất (dù thành công, lỗi, hay bị dừng)
-        processingState = 'stopped'; // Đảm bảo trạng thái là 'stopped'
-        generateFinalReport(); // Xuất kết quả
-        disableSettings(false); // Kích hoạt lại cài đặt
-        updateButtonUI('stopped'); // Hiển thị lại nút "Bắt đầu"
+        // 7. Hoàn tất
+        processingState = 'stopped';
+        generateFinalReport(); 
+        disableSettings(false); 
+        updateButtonUI('stopped');
     }
 }
 
 /**
- * MỚI: Vòng lặp chính xử lý các batch
- * Sử dụng các biến toàn cục: allArticles, currentArticleIndex, allResults, failedArticlesForDownload
+ * Vòng lặp chính xử lý các batch
  */
 async function processBatches(apiKey, modelName, delayTimeMs) {
     const totalArticles = allArticles.length;
 
-    // Vòng lặp này sử dụng và tăng biến toàn cục 'currentArticleIndex'
     for (/* bắt đầu từ index hiện tại */; currentArticleIndex < totalArticles; currentArticleIndex += BATCH_SIZE) {
         
         // --- ĐIỂM KIỂM SOÁT ---
-        // 1. Kiểm tra Tạm dừng
         while (processingState === 'paused') {
             updateStatus(`Đã tạm dừng ở bài ${currentArticleIndex + 1}. Nhấn "Tiếp tục" để chạy.`);
-            await new Promise(resolve => setTimeout(resolve, 500)); // Kiểm tra mỗi 0.5s
+            await new Promise(resolve => setTimeout(resolve, 500)); 
         }
-        // 2. Kiểm tra Dừng
         if (processingState === 'stopped') {
             updateStatus('Đã dừng. Đang chuẩn bị xuất kết quả...');
-            break; // Thoát khỏi vòng lặp for
+            break; 
         }
         // --- KẾT THÚC ĐIỂM KIỂM SOÁT ---
 
@@ -152,46 +229,56 @@ async function processBatches(apiKey, modelName, delayTimeMs) {
         const totalBatches = Math.ceil(totalArticles / BATCH_SIZE);
 
         updateStatus(`Đang xử lý batch ${Math.floor(batchNumber)} / ${totalBatches} (Bài báo ${currentArticleIndex + 1} đến ${Math.min(currentArticleIndex + BATCH_SIZE, totalArticles)})...`);
-
+        
         const batchPromises = batch.map(article => callGeminiAPI(article, apiKey, modelName));
         const settledResults = await Promise.allSettled(batchPromises);
 
-        // Thu thập kết quả vào các mảng toàn cục
+        const currentBatchDisplayResults = [];
+
+        // Thu thập kết quả
         settledResults.forEach((result, index) => {
             const originalArticle = batch[index];
+            let articleResult; 
+
             if (result.status === 'fulfilled') {
-                allResults.push(result.value);
+                articleResult = result.value;
+                allResults.push(articleResult);
             } else {
                 console.error(`Lỗi xử lý "${originalArticle.Title}":`, result.reason);
                 failedArticlesForDownload.push(originalArticle);
                 
-                // MỚI: Tự động dừng nếu hết quota
                 const errorMsg = result.reason.message.toLowerCase();
                 if (errorMsg.includes('quota') || errorMsg.includes('limit') || result.reason.message.includes('429')) {
                     console.warn('Phát hiện lỗi quota. Tự động dừng...');
-                    processingState = 'stopped'; // Sẽ dừng ở vòng lặp tiếp theo
+                    processingState = 'stopped';
                 }
 
-                const errorArticle = { ...originalArticle };
-                errorArticle.Input_Data = `LỖI: ${result.reason.message}`;
+                articleResult = { ...originalArticle }; 
+                articleResult.Input_Data = `LỖI: ${result.reason.message}`;
+                articleResult.Mechanism = 'LỖI';
                 // ... (thêm các trường lỗi khác)
-                allResults.push(errorArticle);
+                allResults.push(articleResult);
             }
+            
+            currentBatchDisplayResults.push(articleResult);
         });
 
-        // Cập nhật thanh tiến trình (dựa trên số lượng allResults)
+        // Hiển thị kết quả batch
+        displayBatchResults(currentBatchDisplayResults);
+
+        // Cập nhật thanh tiến trình
         updateProgress(allResults.length, totalArticles);
 
-        // Nghỉ (chỉ khi không phải batch cuối VÀ chưa bị dừng)
+        // Nghỉ
         if (currentArticleIndex + BATCH_SIZE < totalArticles && processingState === 'running') {
-            updateStatus(`Đang nghỉ ${delayTimeMs / 1000} giây...`);
+            updateStatus(`Đã xử lý xong batch ${Math.floor(batchNumber)}. Đang nghỉ ${delayTimeMs / 1000} giây... (Kết quả bên dưới)`);
             await new Promise(resolve => setTimeout(resolve, delayTimeMs));
         }
     }
 }
 
 /**
- * MỚI: Tạo báo cáo cuối cùng (tách ra từ hàm cũ)
+ * Tạo báo cáo cuối cùng
  */
 function generateFinalReport() {
     if (allResults.length === 0 && failedArticlesForDownload.length === 0) {
@@ -199,8 +286,9 @@ function generateFinalReport() {
         return;
     }
 
-    // Tải tệp kết quả chính (chứa cả thành công và lỗi)
-    generateOutputCSV(allResults, 'LULC_analysis_results_partial.csv');
+    // THAY ĐỔI: Sử dụng tên tệp động
+    const resultsFilename = `${originalFileNameBase}_results_partial.csv`;
+    generateOutputCSV(allResults, resultsFilename);
 
     const failedCount = failedArticlesForDownload.length;
     const successCount = allResults.length - failedCount;
@@ -216,7 +304,6 @@ function generateFinalReport() {
         finalMessage += " Bạn có thể tải về danh sách bài lỗi.";
     }
     
-    // Nếu bị dừng, thêm thông báo
     if (processingState === 'stopped' && currentArticleIndex < allArticles.length - 1) {
          finalMessage = `Đã dừng. Xuất ${allResults.length} kết quả đã xử lý. (Thành công: ${successCount}, Thất bại: ${failedCount})`;
     }
@@ -226,20 +313,20 @@ function generateFinalReport() {
 
 
 /**
- * MỚI: Cập nhật UI của các nút điều khiển
+ * Cập nhật UI của các nút điều khiển
  */
-function updateButtonUI(state) { // 'running', 'paused', 'stopped'
+function updateButtonUI(state) { 
     if (state === 'running') {
         startButton.classList.add('hidden');
         pauseButton.classList.remove('hidden');
         stopButton.classList.remove('hidden');
     } else if (state === 'paused') {
-        startButton.textContent = 'Tiếp tục Xử lý'; // Đổi text
+        startButton.textContent = 'Tiếp tục Xử lý'; 
         startButton.classList.remove('hidden');
         pauseButton.classList.add('hidden');
         stopButton.classList.remove('hidden');
     } else { // 'stopped'
-        startButton.textContent = 'Bắt đầu Xử lý'; // Đổi text
+        startButton.textContent = 'Bắt đầu Xử lý';
         startButton.classList.remove('hidden');
         pauseButton.classList.add('hidden');
         stopButton.classList.add('hidden');
@@ -247,14 +334,14 @@ function updateButtonUI(state) { // 'running', 'paused', 'stopped'
 }
 
 /**
- * MỚI: Vô hiệu hóa/Kích hoạt các ô cài đặt
+ * Vô hiệu hóa/Kích hoạt các ô cài đặt
  */
 function disableSettings(disabled) {
     settingsFieldset.disabled = disabled;
 }
 
 // ==========================================================
-// CÁC HÀM TIỆN ÍCH (Giữ nguyên từ các phiên bản trước)
+// CÁC HÀM TIỆN ÍCH (Giữ nguyên)
 // ==========================================================
 
 function handleDownloadErrors() {
@@ -263,7 +350,10 @@ function handleDownloadErrors() {
         return;
     }
     updateStatus(`Đang tạo tệp CSV cho ${failedArticlesForDownload.length} bài báo lỗi...`);
-    generateOutputCSV(failedArticlesForDownload, 'LULC_failed_articles_retry.csv');
+    
+    // THAY ĐỔI: Sử dụng tên tệp động
+    const errorFilename = `${originalFileNameBase}_failed_retry.csv`;
+    generateOutputCSV(failedArticlesForDownload, errorFilename);
 }
 
 function updateStatus(message) {
@@ -311,9 +401,9 @@ function buildPrompt(article) {
     4.  **accuracy**: (string) Độ chính xác tổng thể (Overall Accuracy) nếu được đề cập trong abstract. Nếu không, điền "N/A". Ví dụ: "92.5%", "N/A".
     5.  **num_classes**: (string) Số lượng lớp LULC nếu được đề cập. Nếu không, điền "N/A". Ví dụ: "6 lớp", "N/A".
     6.  **resolution**: (string) Độ phân giải của dữ liệu nếu được đề cập. Nếu không, điền "N/A". Ví dụ: "30m", "10m", "N/A".
-    7.  **time_frame**: (string) Khung thời gian của dữ liệu nếu được đề cập. Nếu không, điền "N/A". Ví dụ: "2015-2020", "N/A".
+    7.  **time_frame**: (string) Khoảng thời gian của dữ liệu nếu được đề cập. Nếu không, điền "N/A". Ví dụ: "2010-2020", "N/A".
     
-    Chỉ trả về đối tượng JSON chứa nội dung bằng tiếng Anh (English) theo định dạng sau:
+    Chỉ trả về đối tượng JSON theo định dạng sau:
     {
       "input_data": "...",
       "mechanism": "...",
@@ -352,7 +442,6 @@ async function callGeminiAPI(article, apiKey, modelName) {
     if (!response.ok) {
         const errorBody = await response.json();
         console.error("Lỗi API Gemini:", errorBody);
-        // MỚI: Kiểm tra response status code cho lỗi rate limit
         if (response.status === 429) {
              throw new Error(`API Error 429: Rate limit exceeded (Quota). ${errorBody.error.message}`);
         }
@@ -383,7 +472,7 @@ async function callGeminiAPI(article, apiKey, modelName) {
 }
 
 function generateOutputCSV(results, filename = 'LULC_analysis_results.csv') {
-    // (Hàm này không thay đổi, chỉ thêm kiểm tra 'length')
+    // (Hàm này không thay đổi)
     if (results.length === 0) {
         console.log("Không có kết quả nào để xuất cho:", filename);
         return;
