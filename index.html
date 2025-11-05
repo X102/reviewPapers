@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Trình xử lý Bài báo LULC</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <h1>Trình phân tích Bài báo LULC với Gemini</h1>
+        <p>Tải lên tệp CSV chứa các bài báo (cần có cột 'Title', 'Abstract', 'Year') để trích xuất thông tin.</p>
+
+        <fieldset id="settings-fieldset">
+
+            <details class="instructions">
+                <summary>💡 Làm thế nào để lấy API Key?</summary>
+                <div>
+                    <ol>
+                        <li>
+                            Truy cập thẳng vào trang <strong><a href="https://aistudio.google.com/app/apikey" target="_blank">Google AI Studio API Key</a></strong>.
+                        </li>
+                        <li>Đăng nhập bằng tài khoản Google của bạn (nếu được yêu cầu).</li>
+                        <li>Nhấp vào nút <strong>"Create API key in new project"</strong>.</li>
+                        <li>Một API key sẽ hiện ra. Hãy sao chép (copy) chuỗi ký tự đó.</li>
+                        <li>
+                            <strong>Quan trọng:</strong> Key này miễn phí (Free tier) nhưng có giới hạn (ví dụ: 60 request/phút).
+                        </li>
+                    </ol>
+                </div>
+            </details>
+            <div class="input-group">
+                <label for="apiKey">Gemini API Key</label>
+                <input type="password" id="apiKey" placeholder="Dán API Key của bạn vào đây">
+                <small><b>Cảnh báo:</b> Key của bạn chỉ xử lý tại trình duyệt.</small>
+            </div>
+
+            <div class="input-group">
+                <label for="modelName">Tên Model Gemini</label>
+                <input type="text" id="modelName" value="gemini-2.5-flash-lite">
+                <small class="description">Ví dụ: gemini-2.5-flash-lite, </small>
+            </div>
+
+            <div class="input-group">
+                <label for="delayTime">Thời gian nghỉ giữa các batch (giây)</label>
+                <input type="number" id="delayTime" value="30" min="1">
+                <small class="description">Nghỉ để tránh vượt giới hạn API.</small>
+            </div>
+
+            <div class="input-group">
+                <label for="csvFile">Chọn tệp CSV</label>
+                <input type="file" id="csvFile" accept=".csv">
+            </div>
+        </fieldset>
+        
+        <div class="controls-group">
+            <button id="startButton">Bắt đầu Xử lý</button>
+            <button id="pauseButton" class="hidden">Tạm dừng</button>
+            <button id="stopButton" class="hidden">Dừng hẳn & Xuất File</button>
+        </div>
+
+        <div id="status" class="status-container">
+            <p>Trạng thái: Chưa bắt đầu</p>
+            <progress id="progressBar" value="0" max="100"></progress>
+            
+            <div id="status-summary" class="status-summary hidden">
+                <p>Thành công: <span id="successCount">0</span></p>
+                <p>Thất bại: <span id="failedCount">0</span></p>
+            </div>
+        </div>
+
+        <button id="downloadErrorsButton" class="hidden">Tải về danh sách bài báo lỗi</button>
+    </div> <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>

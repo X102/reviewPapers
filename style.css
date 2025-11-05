@@ -1,0 +1,205 @@
+body {
+    font-family: Arial, sans-serif;
+    background-color: #f4f7f6;
+    margin: 0;
+    padding: 20px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+}
+
+.container {
+    background-color: #ffffff;
+    padding: 30px;
+    border-radius: 10px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+    width: 100%;
+    max-width: 600px;
+}
+
+h1 {
+    color: #333;
+    text-align: center;
+    margin-top: 0;
+}
+
+p {
+    color: #555;
+    line-height: 1.6;
+}
+
+.input-group {
+    margin-bottom: 20px;
+}
+
+.input-group label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: bold;
+    color: #444;
+}
+
+.input-group input[type="file"],
+.input-group input[type="password"],
+.input-group input[type="text"],
+.input-group input[type="number"] {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    box-sizing: border-box; /* Quan trọng */
+}
+
+.input-group small {
+    color: #e74c3c;
+    font-weight: bold;
+    display: block;
+    margin-top: 5px;
+}
+
+.input-group small.description {
+    color: #555;
+    font-weight: normal;
+}
+
+button {
+    width: 100%;
+    padding: 12px;
+    background-color: #007bff;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 16px;
+    font-weight: bold;
+    transition: background-color 0.3s ease;
+}
+
+button:hover {
+    background-color: #0056b3;
+}
+
+button:disabled {
+    background-color: #ccc;
+    cursor: not-allowed;
+}
+
+.status-container {
+    margin-top: 25px;
+    border-top: 1px solid #eee;
+    padding-top: 20px;
+}
+
+.status-container p {
+    margin: 0 0 10px 0;
+    font-weight: bold;
+}
+
+progress {
+    width: 100%;
+    height: 10px;
+    border-radius: 5px;
+}
+
+progress::-webkit-progress-bar {
+    background-color: #eee;
+    border-radius: 5px;
+}
+progress::-webkit-progress-value {
+    background-color: #007bff;
+    border-radius: 5px;
+    transition: width 0.3s ease;
+}
+
+/* MỚI: Ẩn các yếu tố */
+.hidden {
+    display: none;
+}
+
+/* MỚI: Kiểu cho tóm tắt */
+.status-summary {
+    margin-top: 15px;
+    padding: 10px;
+    background-color: #f9f9f9;
+    border: 1px solid #eee;
+    border-radius: 5px;
+}
+.status-summary p {
+    margin: 5px 0;
+    font-weight: normal;
+}
+.status-summary span {
+    font-weight: bold;
+}
+
+/* MỚI: Kiểu cho nút tải lỗi */
+#downloadErrorsButton {
+    margin-top: 15px;
+    background-color: #dc3545; /* Màu đỏ */
+}
+#downloadErrorsButton:hover {
+    background-color: #c82333;
+}
+
+/* THAY ĐỔI: Style cho nút chính (thay vì 'button' chung) */
+#startButton {
+    background-color: #007bff;
+}
+#startButton:hover {
+    background-color: #0056b3;
+}
+#startButton:disabled {
+    background-color: #ccc;
+    cursor: not-allowed;
+}
+
+/* MỚI: Nhóm nút điều khiển */
+.controls-group {
+    display: flex;
+    gap: 10px; /* Khoảng cách giữa các nút */
+    margin-top: 10px;
+    margin-bottom: 10px;
+}
+.controls-group button {
+    width: 100%;
+    padding: 12px;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 16px;
+    font-weight: bold;
+    transition: background-color 0.3s ease;
+}
+
+/* MỚI: Style cho nút Tạm dừng */
+#pauseButton {
+    background-color: #ffc107; /* Màu vàng */
+}
+#pauseButton:hover {
+    background-color: #e0a800;
+}
+
+/* MỚI: Style cho nút Dừng và Tải lỗi */
+#stopButton, #downloadErrorsButton {
+    background-color: #dc3545; /* Màu đỏ */
+    margin-top: 0; /* Ghi đè margin-top cũ của downloadErrorsButton */
+}
+#stopButton:hover, #downloadErrorsButton:hover {
+    background-color: #c82333;
+}
+#downloadErrorsButton {
+    margin-top: 15px; /* Thêm lại margin cho nút tải lỗi */
+}
+
+/* MỚI: Bọc các cài đặt trong fieldset để dễ dàng vô hiệu hóa */
+#settings-fieldset {
+    border: none;
+    padding: 0;
+    margin: 0;
+}
+#settings-fieldset:disabled {
+    opacity: 0.7;
+    pointer-events: none;
+}
