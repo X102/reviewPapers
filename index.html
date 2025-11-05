@@ -8,7 +8,7 @@
 </head>
 <body>
     <div class="container">
-        <h1>Trình phân tích Bài báo LULC với Gemini</h1>
+        <h1>Công cụ phân tích Bài báo LULC với Gemini</h1>
         <p>Tải lên tệp CSV chứa các bài báo (cần có cột 'Title', 'Abstract', 'Year') để trích xuất thông tin.</p>
 
         <fieldset id="settings-fieldset">
@@ -59,7 +59,7 @@
             <button id="stopButton" class="hidden">Dừng hẳn & Xuất File</button>
         </div>
 
-        <div id="status" class="status-container">
+<div id="status" class="status-container">
             <p>Trạng thái: Chưa bắt đầu</p>
             <progress id="progressBar" value="0" max="100"></progress>
             
@@ -67,10 +67,23 @@
                 <p>Thành công: <span id="successCount">0</span></p>
                 <p>Thất bại: <span id="failedCount">0</span></p>
             </div>
-        </div>
+
+            <div id="batch-results-container" class="hidden">
+                <h3>Kết quả Batch Vừa Xong</h3>
+                <div class="table-wrapper">
+                    <table id="batch-results-table">
+                        <thead id="batch-results-head">
+                            </thead>
+                        <tbody id="batch-results-body">
+                            </tbody>
+                    </table>
+                </div>
+            </div>
+            </div>
 
         <button id="downloadErrorsButton" class="hidden">Tải về danh sách bài báo lỗi</button>
-    </div> <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+    </div>
+     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
     <script src="script.js"></script>
 </body>
 </html>
